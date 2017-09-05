@@ -4,17 +4,51 @@ import subprocess
 
 def do(command, options={}):
 	""" run `command *options` in bash """
-	command = 'uvspec'
 	for option in options:
 		command += ' '
 		command += '{}={}'.format(option, options[option])
+	print(command)
 	result = subprocess.run(command, shell=True)
 	return result.returncode
-
 
 def uvspec(options={}):
 	return do('uvspec', options)
 
+def imspec(options={}):
+	return do('imspec', options)
+
+def cgcurs(options={}):
+	return do('cgcurs', options)
+
+def uvaver(options={}):
+	return do('uvaver', options)
+
+def selfcal(options={}):
+	return do('selfcal', options)
+
+def gpplt(options={}):
+	return do('gpplt', options)
+
+def invert(options={}):
+	return do('invert', options)
+
+def cgdisp(options={}):
+	return do('cgdisp', options)
+
+def clean(options={}):
+	return do('clean', options)
+
+def restor(options={}):
+	return do('restor', options)
+
+def cgdisp(options={}):
+	return do('cgdisp', options)
+
+def imstat(options={}):
+	return do('imstat', options)
+
+def maxfit(options={}):
+	return do('maxfit', options)
 
 if __name__ == '__main__':
 	uvspec({
