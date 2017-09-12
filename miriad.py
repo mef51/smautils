@@ -1,12 +1,12 @@
 #!/usr/bin/python3
 
-import subprocess
+import subprocess, shlex
 
 def do(command, options={}):
 	""" run `command *options` in bash """
 	for option in options:
 		command += ' '
-		command += '{}={}'.format(option, options[option])
+		command += '{}={}'.format(option, shlex.quote(str(options[option])))
 	# print(command)
 	result = subprocess.run(command, shell=True)
 	result.check_returncode()
@@ -14,6 +14,9 @@ def do(command, options={}):
 
 def uvspec(options={}):
 	return do('uvspec', options)
+
+def smauvspec(options={}):
+	return do('smauvspec', options)
 
 def imspec(options={}):
 	return do('imspec', options)
@@ -23,6 +26,21 @@ def cgcurs(options={}):
 
 def uvaver(options={}):
 	return do('uvaver', options)
+
+def uvflag(options={}):
+	return do('uvflag', options)
+
+def uvputhd(options={}):
+	return do('uvputhd', options)
+
+def uvredo(options={}):
+	return do('uvredo', options)
+
+def uvlist(options={}):
+	return do('uvlist', options)
+
+def uvlin(options={}):
+	return do('uvlin', options)
 
 def uvcat(options={}):
 	return do('uvcat', options)
