@@ -81,6 +81,21 @@ def maxfit(options={}):
 def maths(options={}):
 	return do('maths', options)
 
+def averageLine(numChannels, factor=16):
+	"""
+	Utility to get the line option needed for Miriad in order
+	to average the channels together.
+	For example if I want to average every four channels given that there are
+	6144 channels I need to do this in miriad:
+	`uvspec vis=... line='chan,1536,1,4'
+
+	Given `numChannels` and `factor` (the number of channels to combine)
+	this will return 'chan,numChannels/factor,1,factor'.
+
+	You can get the number of channels in an observation using `uvlist`.
+	"""
+	return 'chan,{},1,{}'.format(numChannels/factor, factor)
+
 if __name__ == '__main__':
 	uvspec({
 		'vis'      : 'UVDATA/orkl_080106.usb,UVOffsetCorrect/orkl_080106.usb.corrected.slfc',
