@@ -2,15 +2,37 @@
 
 import subprocess, shlex
 
-def do(command, options={}):
+def do(command, options={}, stdout=None):
 	""" run `command *options` in bash """
 	for option in options:
 		command += ' '
 		command += '{}={}'.format(option, shlex.quote(str(options[option])))
 	# print(command)
-	result = subprocess.run(command, shell=True)
+	result = subprocess.run(command, shell=True, stdout=stdout)
 	result.check_returncode()
-	return result.returncode
+	return result
+
+def averageLine(numChannels, factor=16):
+	"""
+	Utility to get the line option needed for Miriad in order
+	to average the channels together.
+	For example if I want to average every four channels given that there are
+	6144 channels I need to do this in miriad:
+	`uvspec vis=... line='chan,1536,1,4'
+
+	Given `numChannels` and `factor` (the number of channels to combine)
+	this will return 'chan,numChannels/factor,1,factor'.
+
+	You can get the number of channels in an observation using `uvlist`.
+	"""
+	return 'chan,{},1,{}'.format(numChannels/factor, factor)
+
+def getNumChannels(vis, options={}):
+	""" Parse the number of channels out of `uvlist`s output """
+	options['vis'] = vis
+	result = uvlist(options, stdout=subprocess.PIPE)
+	result = str(result.stdout).split('\\n')[3]
+	return result[result.find(':')+1:result.find(',')]
 
 def uvspec(options={}):
 	return do('uvspec', options)
@@ -36,8 +58,8 @@ def uvputhd(options={}):
 def uvredo(options={}):
 	return do('uvredo', options)
 
-def uvlist(options={}):
-	return do('uvlist', options)
+def uvlist(options={}, stdout=None):
+	return do('uvlist', options, stdout=stdout)
 
 def uvlin(options={}):
 	return do('uvlin', options)
@@ -81,20 +103,7 @@ def maxfit(options={}):
 def maths(options={}):
 	return do('maths', options)
 
-def averageLine(numChannels, factor=16):
-	"""
-	Utility to get the line option needed for Miriad in order
-	to average the channels together.
-	For example if I want to average every four channels given that there are
-	6144 channels I need to do this in miriad:
-	`uvspec vis=... line='chan,1536,1,4'
 
-	Given `numChannels` and `factor` (the number of channels to combine)
-	this will return 'chan,numChannels/factor,1,factor'.
-
-	You can get the number of channels in an observation using `uvlist`.
-	"""
-	return 'chan,{},1,{}'.format(numChannels/factor, factor)
 
 if __name__ == '__main__':
 	uvspec({
