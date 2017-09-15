@@ -32,7 +32,30 @@ def getNumChannels(vis, options={}):
 	options['vis'] = vis
 	result = uvlist(options, stdout=subprocess.PIPE)
 	result = str(result.stdout).split('\\n')[3]
-	return result[result.find(':')+1:result.find(',')]
+	return int(result[result.find(':')+1:result.find(',')])
+
+def getVelocityRange(vis, options={}):
+	"""
+	Parse the velocity range from uvlist.
+	Useful when resampling and re-binning data in `line` selections
+
+	Returns a tuple of the form (starting velocity, end velocity)
+	"""
+	options['vis'] = vis
+	options['options'] = 'spec'
+
+	specdata = uvlist(options, stdout=subprocess.PIPE).stdout
+	specdata = str(specdata)
+
+	# starting velocity
+	startvel = specdata[specdata.find('starting velocity'):]
+	startvel = startvel[startvel.find(':')+1:startvel.find('\\n')].split()[0]
+
+	# ending velocity
+	endvel = specdata[specdata.rfind('ending velocity'):]
+	endvel = endvel[endvel.find(':')+1:endvel.find('\\n')].split()[-1]
+
+	return (float(startvel), float(endvel))
 
 def uvspec(options={}):
 	return do('uvspec', options)
