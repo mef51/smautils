@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
-import subprocess, shlex
+import subprocess, shlex, os
+import plawt
 
 def do(command, options={}, stdout=None):
 	""" run `command *options` in bash """
@@ -57,11 +58,52 @@ def getVelocityRange(vis, options={}):
 
 	return (float(startvel), float(endvel))
 
+def showChannels(vis, options={}):
+	"""
+	Dump visibility data and plot it with a matplotlib window.
+	The matplotlib window has better mouse controls and helps
+	with selecting channel numbers.
+
+	Data is from Miriad's uvspec with stokes=i, axes=chan,amp, interval=9999
+	and options=avall,nobase
+	"""
+	options['vis']      = vis
+	options['stokes']   = 'i'
+	options['options']  = 'avall,nobase'
+	options['axis']     = 'chan,amp'
+	options['interval'] = 9999
+
+	filename = '__{}_uvspec.dat'.format(vis)
+	options['log'] = filename
+
+	chans = []
+	amps = []
+
+	uvspec(options) # miriad will leave us a file with the data
+	with open(filename, 'r') as file:
+		data = file.readlines()
+
+	for line in data:
+		pair = line.split()
+		chans.append(float(pair[0]))
+		amps.append(float(pair[1]))
+
+	os.remove(filename)
+
+	plawt.plot({
+		0: {'x': chans, 'y': amps, 'draw': 'steps-mid', 'line': 'k'},
+		'xlabel': 'Channels', 'ylabel': 'Amplitude',
+		'show': True
+	})
+
 def uvspec(options={}):
 	return do('uvspec', options)
 
 def smauvspec(options={}):
 	return do('smauvspec', options)
+
+def smauvplt(options={}):
+	return do('smauvplt', options)
 
 def imspec(options={}):
 	return do('imspec', options)
