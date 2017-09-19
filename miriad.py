@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 import subprocess, shlex, os
+import matplotlib.pyplot as plt
 import plawt
 
 def do(command, options={}, stdout=None):
@@ -58,7 +59,7 @@ def getVelocityRange(vis, options={}):
 
 	return (float(startvel), float(endvel))
 
-def showChannels(vis, options={}):
+def showChannels(vis, options={}, freq=False):
 	"""
 	Dump visibility data and plot it with a matplotlib window.
 	The matplotlib window has better mouse controls and helps
@@ -66,14 +67,16 @@ def showChannels(vis, options={}):
 
 	Data is from Miriad's uvspec with stokes=i, axes=chan,amp, interval=9999
 	and options=avall,nobase
+
+	set `freq` to true to have the x-axis be frequency instead of channels
 	"""
 	options['vis']      = vis
 	options['stokes']   = 'i'
 	options['options']  = 'avall,nobase'
-	options['axis']     = 'chan,amp'
+	options['axis']     = 'freq,amp' if freq else 'chan,amp'
 	options['interval'] = 9999
 
-	filename = '__{}_uvspec.dat'.format(vis)
+	filename = '__{}_uvspec.dat'.format(vis.split('/')[0])
 	options['log'] = filename
 
 	chans = []
@@ -90,11 +93,21 @@ def showChannels(vis, options={}):
 
 	os.remove(filename)
 
-	plawt.plot({
+	fig = plawt.plot({
 		0: {'x': chans, 'y': amps, 'draw': 'steps-mid', 'line': 'k'},
-		'xlabel': 'Channels', 'ylabel': 'Amplitude',
-		'show': True
+		'xlabel': 'Frequency' if freq else 'Channel',
+		'ylabel': 'Amplitude',
+		'title': vis,
+		'keepOpen': True
 	})
+
+	print('Click to print channel number:')
+	def onclick(e):
+		print(round(e.xdata))
+
+	cid = fig.canvas.mpl_connect('button_press_event', onclick)
+	plt.show()
+	fig.canvas.mpl_disconnect(cid)
 
 def uvspec(options={}):
 	return do('uvspec', options)
