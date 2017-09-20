@@ -29,6 +29,19 @@ def averageLine(numChannels, factor=16):
 	"""
 	return 'chan,{},1,{}'.format(numChannels/factor, factor)
 
+def averageVelocityLine(vis, factor):
+	"""
+	Utility for making line selections when averaging velocity channels.
+	See `averageLine`.
+
+	vis : path to the visibility to use
+	factor: number of channels to merge. ex factor = 5 will merge 5 channels into one.
+	"""
+	velrange = getVelocityRange(vis)
+	nvels = round(abs(velrange[0] - velrange[1])/factor)
+	startvel = round(velrange[1])
+	return 'vel,{0},{1},{2},{2}'.format(nvels, startvel, factor)
+
 def getNumChannels(vis, options={}):
 	""" Parse the number of channels out of `uvlist`s output """
 	options['vis'] = vis
