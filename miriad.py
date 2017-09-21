@@ -72,9 +72,68 @@ def getVelocityRange(vis, options={}):
 
 	return (float(startvel), float(endvel))
 
+def dumpSpec(vis, options={}):
+	"""
+	Returns raw plot data from Miriad's uvspec.
+	This is done with the 'log' option.
+	Temporarily creates a file that contains the data from miriad
+	then deletes it when it's been read.
+	"""
+	options['vis'] = vis
+
+	logfile = '__{}_uvspec.dat'.format(vis.split('/')[0])
+	options['log'] = logfile
+
+	x = []
+	y = []
+
+	uvspec(options) # miriad will leave us a file with the data
+	with open(logfile, 'r') as file:
+		data = file.readlines()
+
+	for line in data:
+		pair = line.split()
+		x.append(float(pair[0]))
+		y.append(float(pair[1]))
+
+	os.remove(logfile)
+
+	return x,y
+
+def compareSpectra(vis1, vis2, combine=10, options={}, plotOptions={}):
+	"""
+	Compare spectra utility. Stokes V by default
+
+	combine: the number of velocity channels to average together
+	"""
+	options['stokes']   = 'v'
+	options['options']  = 'avall,nobase'
+	options['axis']     = 'freq,amp'
+	options['interval'] = 9999
+	options['line']     = averageVelocityLine(vis1, factor=combine)
+
+	freq1, amps1 = dumpSpec(vis1, options)
+	freq2, amps2 = dumpSpec(vis2, options)
+
+	# hack for a bad channel
+	amps1[amps1.index(max(amps1))] = 0
+	amps2[amps2.index(max(amps2))] = 0
+
+	defaults = {
+		0: {'x': freq1, 'y': amps1, 'draw': 'steps-mid', 'line': 'k-'},
+		'title': 'Stokes V: Uncorrected vs Corrected',
+		'xlabel': 'Frequency (GHz)', 'ylabel': 'Visibility Amplitude',
+		'sharex': True, 'sharey': True,
+		'hspace': 0.1,
+	}
+
+	plawt.plot({**defaults, **plotOptions}, {
+		0: {'x': freq2, 'y': amps2, 'draw': 'steps-mid', 'line': 'k-'}
+	})
+
 def showChannels(vis, options={}, freq=False):
 	"""
-	Dump visibility data and plot it with a matplotlib window.
+	Plot visibility data with a matplotlib window.
 	The matplotlib window has better mouse controls and helps
 	with selecting channel numbers.
 
@@ -83,28 +142,12 @@ def showChannels(vis, options={}, freq=False):
 
 	set `freq` to true to have the x-axis be frequency instead of channels
 	"""
-	options['vis']      = vis
 	options['stokes']   = 'i'
 	options['options']  = 'avall,nobase'
 	options['axis']     = 'freq,amp' if freq else 'chan,amp'
 	options['interval'] = 9999
 
-	filename = '__{}_uvspec.dat'.format(vis.split('/')[0])
-	options['log'] = filename
-
-	chans = []
-	amps = []
-
-	uvspec(options) # miriad will leave us a file with the data
-	with open(filename, 'r') as file:
-		data = file.readlines()
-
-	for line in data:
-		pair = line.split()
-		chans.append(float(pair[0]))
-		amps.append(float(pair[1]))
-
-	os.remove(filename)
+	chans, amps = dumpSpec(vis, options)
 
 	fig = plawt.plot({
 		0: {'x': chans, 'y': amps, 'draw': 'steps-mid', 'line': 'k'},
@@ -193,8 +236,6 @@ def maxfit(options={}):
 
 def maths(options={}):
 	return do('maths', options)
-
-
 
 if __name__ == '__main__':
 	uvspec({
