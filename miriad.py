@@ -14,7 +14,7 @@ def do(command, options={}, stdout=None):
 	result.check_returncode()
 	return result
 
-def averageLine(numChannels, factor=16):
+def averageLine(vis, factor=16):
 	"""
 	Utility to get the line option needed for Miriad in order
 	to average the channels together.
@@ -27,6 +27,7 @@ def averageLine(numChannels, factor=16):
 
 	You can get the number of channels in an observation using `uvlist`.
 	"""
+	numChannels = getNumChannels(vis)
 	return 'chan,{},1,{}'.format(numChannels/factor, factor)
 
 def averageVelocityLine(vis, factor):
@@ -157,9 +158,9 @@ def showChannels(vis, options={}, freq=False):
 		'keepOpen': True
 	})
 
-	print('Click to print channel number:')
+	print('Right-click to print channel number:')
 	def onclick(e):
-		print(round(e.xdata))
+		if e.button == 3: print(round(e.xdata))
 
 	cid = fig.canvas.mpl_connect('button_press_event', onclick)
 	plt.show()
