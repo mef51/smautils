@@ -101,38 +101,71 @@ def dumpSpec(vis, options={}):
 
 	return x,y
 
-def compareSpectra(vis1, vis2, combine=10, options={}, plotOptions={}):
+def compareSpectra(visUncorrected, visCorrected,
+	combineI=1,
+	combineV=10,
+	plotOptions={},
+	stokesVylim=None,
+	stokesIylim=None,
+	filterMaxPeak=False):
 	"""
-	Compare spectra utility. Stokes V by default
+	Compare spectra utility.
+	Three panel plot with Stokes I, stokes V uncorrected and Stokes V corrected
 
 	combine: the number of velocity channels to average together
 	"""
-	options['stokes']   = 'v'
-	options['options']  = 'avall,nobase'
-	options['axis']     = 'freq,amp'
-	options['interval'] = 9999
-	options['line']     = averageVelocityLine(vis1, factor=combine)
+	miriadDefaults = {
+		'options': 'avall,nobase',
+		'axis': 'freq,amp',
+		'interval': 9999,
+	}
 
-	freq1, amps1 = dumpSpec(vis1, options)
-	freq2, amps2 = dumpSpec(vis2, options)
+	optionsI = {**miriadDefaults, **{'stokes': 'i', 'line':averageVelocityLine(visUncorrected, factor=combineI)}}
+	optionsV = {**miriadDefaults, **{'stokes': 'v', 'line':averageVelocityLine(visCorrected, factor=combineV)}}
+
+	freq1, amps1 = dumpSpec(visCorrected, optionsI)
+	freq2, amps2 = dumpSpec(visUncorrected, optionsV)
+	freq3, amps3 = dumpSpec(visCorrected, optionsV)
 
 	# hack for a bad channel
-	amps1[amps1.index(max(amps1))] = 0
-	amps2[amps2.index(max(amps2))] = 0
+	if filterMaxPeak:
+		amps1[amps1.index(max(amps1))] = 0
+		amps2[amps2.index(max(amps2))] = 0
+		amps3[amps3.index(max(amps3))] = 0
+
+	fontsize = 8
+	subtitledict = {'verticalalignment': 'center'}
+	if stokesVylim is None:
+		pad = 0.05 # 5%
+		upperlim = max(max(amps2), max(amps3))
+		upperlim = upperlim + pad*upperlim
+		stokesVylim = (0, upperlim)
+
+	# xlim = (345.65,347.65)
+	xlim = (min(freq2),max(freq2))
 
 	defaults = {
-		0: {'x': freq1, 'y': amps1, 'draw': 'steps-mid', 'line': 'k-'},
-		'title': 'Stokes V: Uncorrected vs Corrected',
+		0: {'x': freq1, 'y': amps1, 'draw': 'steps-mid', 'line': 'k-', 'label': 'Stokes I'},
+		'legend': {'loc': 1, 'fontsize': fontsize},
+		'title': '',
 		'xlabel': 'Frequency (GHz)', 'ylabel': 'Visibility Amplitude',
-		'sharex': True, 'sharey': True,
-		'hspace': 0.1,
+		'sharex': True, 'sharey': 'row',
+		'hspace': 0.0,
+		'ylim': stokesIylim,
+		'xlim': xlim,
 	}
 
 	plawt.plot({**defaults, **plotOptions}, {
-		0: {'x': freq2, 'y': amps2, 'draw': 'steps-mid', 'line': 'k-'}
+		0: {'x': freq2, 'y': amps2, 'draw': 'steps-mid', 'line': 'k-', 'label': 'Stokes V before squint correction'},
+		'legend': {'loc': 1, 'fontsize': fontsize},
+		'ylim': stokesVylim,
+	}, {
+		0: {'x': freq3, 'y': amps3, 'draw': 'steps-mid', 'line': 'k-', 'label': 'Stokes V after squint correction'},
+		'legend': {'loc': 1, 'fontsize': fontsize},
+		'ylim': stokesVylim,
 	})
 
-def showChannels(vis, options={}, freq=False):
+def showChannels(vis, options={}, freq=False, subtitle=''):
 	"""
 	Plot visibility data with a matplotlib window.
 	The matplotlib window has better mouse controls and helps
@@ -154,7 +187,7 @@ def showChannels(vis, options={}, freq=False):
 		0: {'x': chans, 'y': amps, 'draw': 'steps-mid', 'line': 'k'},
 		'xlabel': 'Frequency' if freq else 'Channel',
 		'ylabel': 'Amplitude',
-		'title': vis,
+		'title': '{}: {}'.format(vis, subtitle),
 		'keepOpen': True
 	})
 
