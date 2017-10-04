@@ -107,6 +107,7 @@ def compareSpectra(visUncorrected, visCorrected,
 	plotOptions={},
 	stokesVylim=None,
 	stokesIylim=None,
+	legendloc=1,
 	filterMaxPeak=False):
 	"""
 	Compare spectra utility.
@@ -135,18 +136,22 @@ def compareSpectra(visUncorrected, visCorrected,
 
 	fontsize = 8
 	subtitledict = {'verticalalignment': 'center'}
+	pad = 0.05 # 5%
 	if stokesVylim is None:
-		pad = 0.05 # 5%
 		upperlim = max(max(amps2), max(amps3))
 		upperlim = upperlim + pad*upperlim
-		stokesVylim = (0, upperlim)
+		stokesVylim = [(0, upperlim), (0, upperlim)]
+	elif stokesVylim is 'separate':
+		upperlim = max(max(amps2), max(amps3))
+		upperlim = upperlim + pad*upperlim
+		stokesVylim = [(0, max(amps2) + pad*max(amps2)), (0, max(amps3) + pad*max(amps3))]
 
 	# xlim = (345.65,347.65)
 	xlim = (min(freq2),max(freq2))
 
 	defaults = {
 		0: {'x': freq1, 'y': amps1, 'draw': 'steps-mid', 'line': 'k-', 'label': 'Stokes I'},
-		'legend': {'loc': 1, 'fontsize': fontsize},
+		'legend': {'loc': legendloc, 'fontsize': fontsize},
 		'title': '',
 		'xlabel': 'Frequency (GHz)', 'ylabel': 'Visibility Amplitude',
 		'sharex': True, 'sharey': 'row',
@@ -155,14 +160,14 @@ def compareSpectra(visUncorrected, visCorrected,
 		'xlim': xlim,
 	}
 
-	plawt.plot({**defaults, **plotOptions}, {
+	fig = plawt.plot({**defaults, **plotOptions}, {
 		0: {'x': freq2, 'y': amps2, 'draw': 'steps-mid', 'line': 'k-', 'label': 'Stokes V before squint correction'},
-		'legend': {'loc': 1, 'fontsize': fontsize},
-		'ylim': stokesVylim,
+		'legend': {'loc': legendloc, 'fontsize': fontsize},
+		'ylim': stokesVylim[0],
 	}, {
 		0: {'x': freq3, 'y': amps3, 'draw': 'steps-mid', 'line': 'k-', 'label': 'Stokes V after squint correction'},
-		'legend': {'loc': 1, 'fontsize': fontsize},
-		'ylim': stokesVylim,
+		'legend': {'loc': legendloc, 'fontsize': fontsize},
+		'ylim': stokesVylim[1],
 	})
 
 def showChannels(vis, options={}, freq=False, subtitle=''):
