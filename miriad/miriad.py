@@ -139,12 +139,14 @@ def compareSpectra(visUncorrected, visCorrected,
 	pad = 0.05 # 5%
 	if stokesVylim is None:
 		upperlim = max(max(amps2), max(amps3))
+		lowerlim = min(min(amps2), min(amps3))
 		upperlim = upperlim + pad*upperlim
-		stokesVylim = [(0, upperlim), (0, upperlim)]
+		stokesVylim = [(lowerlim, upperlim), (lowerlim, upperlim)]
 	elif stokesVylim is 'separate':
 		upperlim = max(max(amps2), max(amps3))
+		lowerlim = min(min(amps2), min(amps3))
 		upperlim = upperlim + pad*upperlim
-		stokesVylim = [(0, max(amps2) + pad*max(amps2)), (0, max(amps3) + pad*max(amps3))]
+		stokesVylim = [(lowerlim, max(amps2) + pad*max(amps2)), (lowerlim, max(amps3) + pad*max(amps3))]
 
 	# xlim = (345.65,347.65)
 	xlim = (min(freq2),max(freq2))
@@ -158,6 +160,7 @@ def compareSpectra(visUncorrected, visCorrected,
 		'hspace': 0.0,
 		'ylim': stokesIylim,
 		'xlim': xlim,
+		'minorticks': True,
 	}
 
 	fig = plawt.plot({**defaults, **plotOptions}, {
@@ -181,10 +184,13 @@ def showChannels(vis, options={}, freq=False, subtitle=''):
 
 	set `freq` to true to have the x-axis be frequency instead of channels
 	"""
-	options['stokes']   = 'i'
-	options['options']  = 'avall,nobase'
-	options['axis']     = 'freq,amp' if freq else 'chan,amp'
-	options['interval'] = 9999
+	defaults = {
+		'stokes': 'i',
+		'options': 'avall,nobase',
+		'axis': 'freq,amp' if freq else 'chan,amp',
+		'interval': 9999
+	}
+	options = {**defaults, **options}
 
 	chans, amps = dumpSpec(vis, options)
 
