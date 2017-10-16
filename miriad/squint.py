@@ -308,7 +308,7 @@ def disp(uvo, uvc, so, mapdir, lines=[], stokesVrms=[]):
 				'options': 'full,beambl,3val',
 				'csize': '0,1,0,0',
 				'cols1': 2, 'cols2': 8,
-				'levs1': '15,35,55,75,95',
+				'levs1': '-95,-75,-55,-35,-15,15,35,55,75,95',
 				'nxy': nxy,
 			}
 
