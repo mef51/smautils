@@ -215,6 +215,53 @@ def mapvis(uvo, uvc, so, mapdir, lines=[], lineSelection=[]):
 				'out': '{}.{}.cm'.format(src, pol),
 			})
 
+def mapallvis(uvo, uvc, so, mapdir, lines=[]):
+	"""
+	Similar to mapvis but doesn't do multiple frequency synthesis.
+	The frequency axis is preserved so you can get spectra from the image.
+	"""
+	calibrator = 'cnt.usb'
+	tall = 0.50
+
+	# remove continuum, its already been mapped
+	lines.remove(calibrator)
+	lines.remove('usb')
+
+	for i, lin in enumerate(lines):
+		vis = '{}/{}.{}.corrected.slfc'.format(uvc, so, lin)
+		for src in ['{}/{}.{}'.format(mapdir, so, lin), '{}/{}.{}.uncorrected'.format(mapdir, so, lin)]:
+			line = miriad.averageVelocityLine(vis, 2)
+			for path in glob.glob('{}.full.*'.format(src)):
+				if os.path.exists(path): shutil.rmtree(path)
+
+			invertOptions = {
+				'vis': vis,
+				'stokes': 'i,v',
+				'beam': '{}.full.bm'.format(src),
+				'map': '{0}.i.full.mp,{0}.v.full.mp'.format(src),
+				'imsize': 128,
+				'cell': 0.3,
+				'options': 'systemp,double',
+				'sup': 0,
+			}
+			miriad.invert(invertOptions)
+
+			for stk in ['i', 'v']:
+				miriad.clean({
+					'map': '{}.{}.full.mp'.format(src, stk),
+					'beam': '{}.full.bm'.format(src),
+					'out': '{}.{}.full.cc'.format(src, stk),
+					'niters': 3000,
+					'cutoff': tall
+				})
+				miriad.restor({
+					'map': '{}.{}.full.mp'.format(src, stk),
+					'beam': '{}.full.bm'.format(src),
+					'model': '{}.{}.full.cc'.format(src, stk),
+					'out': '{}.{}.full.cm'.format(src, stk),
+				})
+			vis = '{}/{}.{}'.format(uvo, so, lin)
+
 def disp(uvo, uvc, so, mapdir, lines=[], stokesVrms=[]):
 	"""
 	1. Plot uncorrected channel map
@@ -320,7 +367,11 @@ if __name__ == '__main__':
 	input("Press return to selfcal")
 	selfcal(so, uvc, lines)
 	input("Press return to map visibilities")
-	mapvis(uvo, uvc, so, mapdir, lines)
+	mapvis(uvo, uvc, so, mapdir, lines[:],
+		lineSelection=[None, None, None, None]
+	)
+	input("Press return to map visibilities with frequency axis")
+	mapvis(uvo, uvc, so, mapdir, lines[:])
 	input("Press return to save plots")
 	disp(uvo, uvc, so, mapdir,
 		lines=['co3-2', 'ch2co17-16', 'cnt'],
