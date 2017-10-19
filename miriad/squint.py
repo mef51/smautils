@@ -6,17 +6,26 @@ import miriad
 
 def split(uvo, uvc, so, lines=[]):
 	""" Split in different files LL and RR """
+	from subprocess import CalledProcessError
 	stks = ['ll', 'rr', 'lr', 'rl']
 	for stk in stks:
 		for lin in lines:
 			path = '{}/{}.{}.{}'.format(uvc, so, lin, stk)
 			if os.path.exists(path): shutil.rmtree(path)
 
-			miriad.uvaver({
-				'vis' : '{}/{}.{}'.format(uvo, so, lin),
-				'out' : '{}/{}.{}.{}'.format(uvc, so, lin, stk),
-				'select' : 'pol({})'.format(stk)
-			})
+			try:
+				miriad.uvaver({
+					'vis' : '{}/{}.{}'.format(uvo, so, lin),
+					'out' : '{}/{}.{}.{}'.format(uvc, so, lin, stk),
+					'select' : 'pol({})'.format(stk)
+				})
+			except CalledProcessError:
+				print("### Retrying with stokes selection instead")
+				miriad.uvaver({
+					'vis' : '{}/{}.{}'.format(uvo, so, lin),
+					'out' : '{}/{}.{}.{}'.format(uvc, so, lin, stk),
+					'stokes' : stk
+				})
 
 def selfcal(so, uvc, lines=[]):
 	"""
@@ -215,23 +224,27 @@ def mapvis(uvo, uvc, so, mapdir, lines=[], lineSelection=[]):
 				'out': '{}.{}.cm'.format(src, pol),
 			})
 
-def mapallvis(uvo, uvc, so, mapdir, lines=[]):
+def mapallvis(uvo, uvc, so, mapdir, lines=[], lineSelection=[]):
 	"""
 	Similar to mapvis but doesn't do multiple frequency synthesis.
 	The frequency axis is preserved so you can get spectra from the image.
 	"""
+	from subprocess import CalledProcessError
+
+	if len(lines) != len(lineSelection):
+		lineSelection = [None for l in lines]
+
 	calibrator = 'cnt.usb'
 	tall = 0.50
 
 	# remove continuum, its already been mapped
+	lineSelection.pop(lines.index(calibrator))
 	lines.remove(calibrator)
-	lines.remove('usb')
 
 	for i, lin in enumerate(lines):
 		vis = '{}/{}.{}.corrected.slfc'.format(uvc, so, lin)
 		for src in ['{}/{}.{}'.format(mapdir, so, lin), '{}/{}.{}.uncorrected'.format(mapdir, so, lin)]:
-			line = miriad.averageVelocityLine(vis, 2)
-			for path in glob.glob('{}.full.*'.format(src)):
+			for path in glob.glob('{}*.full.*'.format(src)):
 				if os.path.exists(path): shutil.rmtree(path)
 
 			invertOptions = {
@@ -244,7 +257,15 @@ def mapallvis(uvo, uvc, so, mapdir, lines=[]):
 				'options': 'systemp,double',
 				'sup': 0,
 			}
-			miriad.invert(invertOptions)
+
+			try:
+				miriad.invert(invertOptions)
+			except CalledProcessError:
+				print("### Retrying invert with line selection")
+				line = miriad.averageVelocityLine(vis, 2)
+				sel = lineSelection[i] if lineSelection[i] is not None else line
+				invertOptions['line'] = sel
+				miriad.invert(invertOptions)
 
 			for stk in ['i', 'v']:
 				miriad.clean({
