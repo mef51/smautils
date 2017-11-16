@@ -173,6 +173,45 @@ def compareSpectra(visUncorrected, visCorrected,
 		'ylim': stokesVylim[1],
 	})
 
+def compareMapSpectra(uncorrectedMap, correctedMap, stokes, source, plotOptions={}):
+	"""
+	maxfit options=abs on the corrected/uncorrected maps for each line
+	reinvert the visibilities without the 'mfs' to preserve the velocity axis
+	use velsw to switch from velocity to frequency:
+	`velsw in=MAPSCorrect/NGC7538S-s4.co3-2.v.cm axis=FREQ`
+	imspect with region='abspixel,box(x1,y1,x1,y1)' where x1,y1 is the peak found by maxfit
+	I can also not use mfs at all with no line selection and get the peak with maxfit on that map.
+	I then use imspec at the new peak and this gives me a better spectra.
+	The map however has Stokes I and Stokes V peaks that don't align. The peaks are bigger however.
+
+	---
+	uncorrectedMap: string of the path
+	correctedMap: string of the path
+	stokes: string, one of 'i', 'q', 'u', 'v', 'rr', 'rl', 'lr', 'll'
+	source: string
+	"""
+	corrText = ['uncorr', 'corr']
+	for i, mapdir in enumerate([uncorrectedMap, correctedMap]):
+		for stk in stokes:
+			mapsuffix = '.{}.full.cm'.format(stk)
+			vsuffix = '.{}.full.cm'.format('v')
+			mappath = mapdir + mapsuffix
+			vmappath = mapdir + vsuffix
+
+			velsw({'in': mappath, 'axis': 'FREQ'})
+
+			# plot i and v through the peak of v
+			maxPixel = maxfit({'in': vmappath, 'options': 'abs'}, stdout=subprocess.PIPE).stdout
+			maxPixel = str(maxPixel).split('\\n')[4]
+			maxPixel = maxPixel[maxPixel.find('(')+1:maxPixel.find(')')].split(',')[0:2]
+			maxPixel = list(map(int, maxPixel))
+
+			imspect({
+				'in': mappath,
+				'region': 'abspixel,box({0},{1},{0},{1})'.format(maxPixel[0], maxPixel[1]),
+				'device': '{}.{}.{}.ps/cps'.format(source, corrText[i], stk)
+			})
+
 def showChannels(vis, options={}, freq=False, subtitle=''):
 	"""
 	Plot visibility data with a matplotlib window.
@@ -221,6 +260,12 @@ def smauvplt(options={}):
 
 def imspec(options={}):
 	return do('imspec', options)
+
+def imspect(options={}):
+	return do('imspect', options)
+
+def velsw(options={}):
+	return do('velsw', options)
 
 def cgcurs(options={}):
 	return do('cgcurs', options)
@@ -276,11 +321,14 @@ def cgdisp(options={}):
 def imstat(options={}):
 	return do('imstat', options)
 
-def maxfit(options={}):
-	return do('maxfit', options)
+def maxfit(options={}, stdout=None):
+	return do('maxfit', options, stdout=stdout)
 
 def maths(options={}):
 	return do('maths', options)
+
+def prthd(options={}):
+	return do('prthd', options)
 
 if __name__ == '__main__':
 	uvspec({
