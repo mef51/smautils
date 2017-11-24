@@ -82,7 +82,7 @@ def dumpSpec(vis, options={}):
 	"""
 	options['vis'] = vis
 
-	logfile = '__{}_uvspec.dat'.format(vis.split('/')[0])
+	logfile = '_{}_uvspec.dat'.format(vis.split('/')[0])
 	options['log'] = logfile
 
 	x = []
@@ -100,6 +100,38 @@ def dumpSpec(vis, options={}):
 	os.remove(logfile)
 
 	return x,y
+
+def dumpImspect(mappath, options={}):
+	"""
+	Returns raw plot data from Miriad's imspect.
+	This is done with the 'log' option.
+	Temporarily creates a file that contains the data from miriad
+	then deletes it when it's been read.
+	"""
+	options['in'] = mappath
+
+	logfile = '_temp_imspect.dat'
+	options['log'] = logfile
+
+	chans = []
+	x = []
+	y = []
+
+	imspect(options) # miriad will leave us a file with the data
+	with open(logfile, 'r') as file:
+		data = file.readlines()
+
+	data = data[4:] # skip the header
+
+	for line in data:
+		triplet = line.split()
+		chans.append(float(triplet[0]))
+		x.append(float(triplet[1]))
+		y.append(float(triplet[2]))
+
+	os.remove(logfile)
+
+	return x, y, chans
 
 def showChannels(vis, options={}, freq=False, subtitle=''):
 	"""
