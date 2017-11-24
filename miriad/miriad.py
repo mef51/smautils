@@ -173,7 +173,7 @@ def compareSpectra(visUncorrected, visCorrected,
 		'ylim': stokesVylim[1],
 	})
 
-def compareMapSpectra(uncorrectedMap, correctedMap, stokes, source, plotOptions={}):
+def compareMapSpectra(uncorrectedMap, correctedMap, line, stokes, source, plotOptions={}):
 	"""
 	maxfit options=abs on the corrected/uncorrected maps for each line
 	reinvert the visibilities without the 'mfs' to preserve the velocity axis
@@ -187,29 +187,31 @@ def compareMapSpectra(uncorrectedMap, correctedMap, stokes, source, plotOptions=
 	---
 	uncorrectedMap: string of the path
 	correctedMap: string of the path
+	line: string of line (ex 'co3-2') to find the peak of
 	stokes: string, one of 'i', 'q', 'u', 'v', 'rr', 'rl', 'lr', 'll'
 	source: string
 	"""
+
+	# find the peak of Stokes V in the corrected line map
+	vlinemap = (correctedMap + '.v.full.cm').replace('usb', line)
+	maxPixel = maxfit({'in': vlinemap, 'options': 'abs'}, stdout=subprocess.PIPE).stdout
+	maxPixel = str(maxPixel).split('\\n')[4]
+	maxPixel = maxPixel[maxPixel.find('(')+1:maxPixel.find(')')].split(',')[0:2]
+	maxPixel = list(map(int, maxPixel))
+
 	corrText = ['uncorr', 'corr']
 	for i, mapdir in enumerate([uncorrectedMap, correctedMap]):
 		for stk in stokes:
 			mapsuffix = '.{}.full.cm'.format(stk)
-			vsuffix = '.{}.full.cm'.format('v')
 			mappath = mapdir + mapsuffix
-			vmappath = mapdir + vsuffix
 
 			velsw({'in': mappath, 'axis': 'FREQ'})
 
-			# plot i and v through the peak of v
-			maxPixel = maxfit({'in': vmappath, 'options': 'abs'}, stdout=subprocess.PIPE).stdout
-			maxPixel = str(maxPixel).split('\\n')[4]
-			maxPixel = maxPixel[maxPixel.find('(')+1:maxPixel.find(')')].split(',')[0:2]
-			maxPixel = list(map(int, maxPixel))
-
+			# plot i and v through the point where v peaks in the line map
 			imspect({
 				'in': mappath,
 				'region': 'abspixel,box({0},{1},{0},{1})'.format(maxPixel[0], maxPixel[1]),
-				'device': '{}.{}.{}.ps/cps'.format(source, corrText[i], stk)
+				'device': 'newfigures/{}.{}peak.{}.{}.ps/cps'.format(source, line, corrText[i], stk)
 			})
 
 def showChannels(vis, options={}, freq=False, subtitle=''):
