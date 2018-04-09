@@ -133,7 +133,7 @@ def dumpImspect(mappath, options={}):
 
 	return x, y, chans
 
-def showChannels(vis, options={}, freq=False, subtitle=''):
+def showChannels(vis, options={}, freq=False, subtitle='', useImspect=False):
 	"""
 	Plot visibility data with a matplotlib window.
 	The matplotlib window has better mouse controls and helps

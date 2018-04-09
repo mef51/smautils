@@ -224,7 +224,7 @@ def mapvis(uvo, uvc, so, mapdir, lines=[], lineSelection=[]):
 				'out': '{}.{}.cm'.format(src, pol),
 			})
 
-def mapallvis(uvo, uvc, so, mapdir, lines=[], lineSelection=[]):
+def mapallvis(uvo, uvc, so, mapdir, lines=[], lineSelection=[], selects=[]):
 	"""
 	Similar to mapvis but doesn't do multiple frequency synthesis.
 	The frequency axis is preserved so you can get spectra from the image.
@@ -233,6 +233,8 @@ def mapallvis(uvo, uvc, so, mapdir, lines=[], lineSelection=[]):
 
 	if len(lines) != len(lineSelection):
 		lineSelection = [None for l in lines]
+	if len(lines) != len(selects):
+		selects = [None for l in lines]
 
 	calibrator = 'cnt.usb'
 	tall = 0.50
@@ -257,6 +259,8 @@ def mapallvis(uvo, uvc, so, mapdir, lines=[], lineSelection=[]):
 				'options': 'systemp,double',
 				'sup': 0,
 			}
+			if selects[i]:
+				invertOptions['select'] = selects[i]
 
 			try:
 				miriad.invert(invertOptions)
