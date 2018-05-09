@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(name='smautils',
-	version='1.0',
+	version='1.0.1',
 	description='Wrapper for the Miriad Interferometric Reduction Package',
 	author='Mohammed Chamma',
 	author_email='mchamma@uwo.ca',
