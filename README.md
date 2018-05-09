@@ -10,3 +10,7 @@ Tools for the analysis done in Chamma et al. 2018 (submitted) and https://github
 Installation
 ====
 `pip install smautils` then `import miriad`. See `squint.py` for an example on usage.
+
+---
+
+MIT License
